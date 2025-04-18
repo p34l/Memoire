@@ -6,81 +6,106 @@
 //
 
 import SwiftUI
-import CoreData
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
-
+    
+    @State private var items: [ListItem] = []
+    @State private var showingAddScreen = false
+    @State private var searchText: String = ""
+    
+    var filteredItems: [ListItem] {
+        if searchText.isEmpty {
+            return items
+        } else {
+            return items.filter { $0.title.lowercased().contains(searchText.lowercased()) }
+        }
+    }
+    
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+        NavigationStack {
+            VStack {
+                SearchBar(text: $searchText)
+                    .padding(.top, 10)
+                
+                List {
+                    ForEach(filteredItems) { item in
+                        HStack(alignment: .top, spacing: 12) {
+                            if let posterURL = item.posterURL,
+                               let url = URL(string: posterURL) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        ProgressView()
+                                            .frame(width: 60, height: 90)
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 60, height: 90)
+                                            .cornerRadius(8)
+                                            .clipped()
+                                    case .failure:
+                                        Image(systemName: "film")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 60, height: 90)
+                                            .foregroundColor(.gray)
+                                    @unknown default:
+                                        EmptyView()
+                                    }
+                                }
+                            } else {
+                                Image(systemName: "film")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 60, height: 90)
+                                    .foregroundColor(.gray)
+                            }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.title)
+                                    .font(.headline)
+                                if let type = item.type {
+                                    Text("\(type)")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                if let genre = item.genre {
+                                    Text(genre)
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                                Text("⭐️ \(item.rating)/10")
+                                    .font(.caption)
+                            }
+
+                            Spacer()
+
+                            if let plot = item.plot {
+                                Text(plot)
+                                    .font(.caption)
+                                    .multilineTextAlignment(.leading)
+                                    .foregroundColor(.secondary)
+                                    .frame(maxWidth: 150, alignment: .leading)
+                            }
+                        }
+                        .padding(.vertical, 6)
                     }
                 }
-                .onDelete(perform: deleteItems)
             }
+            .navigationTitle("Memoire")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                    Button(action: {
+                        showingAddScreen = true
+                    }) {
+                        Label("Add", systemImage: "plus")
                     }
                 }
             }
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+            .sheet(isPresented: $showingAddScreen) {
+                AddItemView(items: $items)
             }
         }
     }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-}
-
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
-
-#Preview {
-    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }
