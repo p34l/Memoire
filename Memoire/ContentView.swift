@@ -32,28 +32,7 @@ struct ContentView: View {
                         HStack(alignment: .top, spacing: 12) {
                             if let posterURL = item.posterURL,
                                let url = URL(string: posterURL) {
-                                AsyncImage(url: url) { phase in
-                                    switch phase {
-                                    case .empty:
-                                        ProgressView()
-                                            .frame(width: 60, height: 90)
-                                    case .success(let image):
-                                        image
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                            .frame(width: 60, height: 90)
-                                            .cornerRadius(8)
-                                            .clipped()
-                                    case .failure:
-                                        Image(systemName: "film")
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(width: 60, height: 90)
-                                            .foregroundColor(.gray)
-                                    @unknown default:
-                                        EmptyView()
-                                    }
-                                }
+                                CachedAsyncImage(url: url, width: 60, height: 90)
                             } else {
                                 Image(systemName: "film")
                                     .resizable()
@@ -61,7 +40,7 @@ struct ContentView: View {
                                     .frame(width: 60, height: 90)
                                     .foregroundColor(.gray)
                             }
-
+                            
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(item.title)
                                     .font(.headline)
@@ -78,9 +57,9 @@ struct ContentView: View {
                                 Text("⭐️ \(item.rating)/10")
                                     .font(.caption)
                             }
-
+                            
                             Spacer()
-
+                            
                             if let plot = item.plot {
                                 Text(plot)
                                     .font(.caption)
@@ -91,6 +70,7 @@ struct ContentView: View {
                         }
                         .padding(.vertical, 6)
                     }
+                    .onDelete(perform: deleteItem)
                 }
             }
             .navigationTitle("Memoire")
@@ -105,6 +85,14 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingAddScreen) {
                 AddItemView(items: $items)
+            }
+        }
+    }
+    func deleteItem(at offsets: IndexSet) {
+        let filtered = filteredItems
+        for index in offsets {
+            if let originalIndex = items.firstIndex(where: { $0.id == filtered[index].id }) {
+                items.remove(at: originalIndex)
             }
         }
     }

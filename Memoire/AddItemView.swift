@@ -28,7 +28,6 @@ struct AddItemView: View {
                         fetchIMDBData(for: title) { ratingString, posterURL, genre, type, plot in
                             DispatchQueue.main.async {
                                 let ratingValue = String(format: "%.1f", Double(ratingString ?? "") ?? 0)
-                                let secureURL = posterURL?.replacingOccurrences(of: "http://", with: "https://")
                                 
                                 let newItem = ListItem(
                                     id: UUID(),
@@ -36,7 +35,7 @@ struct AddItemView: View {
                                     type: type,
                                     rating: ratingValue,
                                     dateAdded: Date(),
-                                    posterURL: secureURL,
+                                    posterURL: posterURL,
                                     genre: genre,
                                     plot: plot
                                 )
