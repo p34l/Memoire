@@ -9,15 +9,16 @@ import SwiftUI
 
 struct ContentView: View {
     
-    @State private var items: [ListItem] = []
+    @StateObject var dataManager = ListItemDataManager()
     @State private var showingAddScreen = false
     @State private var searchText: String = ""
-    
+
     var filteredItems: [ListItem] {
+        let listItems = dataManager.items.map { ListItem(from: $0) } 
         if searchText.isEmpty {
-            return items
+            return listItems
         } else {
-            return items.filter { $0.title.lowercased().contains(searchText.lowercased()) }
+            return listItems.filter { $0.title.lowercased().contains(searchText.lowercased()) }
         }
     }
     
@@ -26,51 +27,16 @@ struct ContentView: View {
             VStack {
                 SearchBar(text: $searchText)
                     .padding(.top, 10)
-                
                 List {
-                    ForEach(filteredItems) { item in
-                        HStack(alignment: .top, spacing: 12) {
-                            if let posterURL = item.posterURL,
-                               let url = URL(string: posterURL) {
-                                CachedAsyncImage(url: url, width: 60, height: 90)
-                            } else {
-                                Image(systemName: "film")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 60, height: 90)
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(item.title)
-                                    .font(.headline)
-                                if let type = item.type {
-                                    Text("\(type)")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                                if let genre = item.genre {
-                                    Text(genre)
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
-                                Text("⭐️ \(item.rating)/10")
-                                    .font(.caption)
-                            }
-                            
-                            Spacer()
-                            
-                            if let plot = item.plot {
-                                Text(plot)
-                                    .font(.caption)
-                                    .multilineTextAlignment(.leading)
-                                    .foregroundColor(.secondary)
-                                    .frame(maxWidth: 150, alignment: .leading)
-                            }
-                        }
-                        .padding(.vertical, 6)
+                    ForEach(filteredItems, id: \.id) { item in
+                        ItemRow(item: item)
+                            .padding(.vertical, 6)
                     }
-                    .onDelete(perform: deleteItem)
+                    .onDelete { indexSet in
+                        indexSet.map { dataManager.items[$0] }.forEach { item in
+                            dataManager.deleteItem(item)
+                        }
+                    }
                 }
             }
             .navigationTitle("Memoire")
@@ -83,16 +49,61 @@ struct ContentView: View {
                     }
                 }
             }
+            // adding ItemView
             .sheet(isPresented: $showingAddScreen) {
-                AddItemView(items: $items)
+                AddItemView(dataManager: dataManager)
             }
         }
     }
-    func deleteItem(at offsets: IndexSet) {
-        let filtered = filteredItems
-        for index in offsets {
-            if let originalIndex = items.firstIndex(where: { $0.id == filtered[index].id }) {
-                items.remove(at: originalIndex)
+    
+    struct ItemRow: View {
+        var item: ListItem
+        
+        var body: some View {
+            HStack(alignment: .top, spacing: 12) {
+                posterView
+                itemDetails
+                Spacer()
+                plotText
+            }
+        }
+        
+        private var posterView: some View {
+            Group {
+                if let posterURL = item.posterURL, let url = URL(string: posterURL) {
+                    CachedAsyncImage(url: url, width: 60, height: 90)
+                }
+            }
+        }
+        
+        private var itemDetails: some View {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.title)
+                    .font(.headline)
+                if let type = item.type {
+                    Text(type)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                if let genre = item.genre {
+                    Text(genre)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                Text("⭐️ \(item.rating)/10")
+                    .font(.caption)
+            }
+        }
+        
+        private var plotText: some View {
+            Group {
+                if let plot = item.plot {
+                    Text(plot)
+                        .font(.caption)
+                        .multilineTextAlignment(.leading)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: 150, alignment: .leading)
+                }
             }
         }
     }

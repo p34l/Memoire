@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788" systemVersion="24D81" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="ListItemEntity" representedClassName=".ListItemEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="genre" optional="YES" attributeType="String"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="plot" optional="YES" attributeType="String"/>
+        <attribute name="posterURL" optional="YES" attributeType="String"/>
+        <attribute name="rating" attributeType="String"/>
+        <attribute name="title" attributeType="String"/>
+        <attribute name="type" optional="YES" attributeType="String"/>
+    </entity>
+</model>
