@@ -1,5 +1,5 @@
 //
-//  OMDbResponse.swift
+//  IMDbResponse.swift
 //  Memoire
 //
 //  Created by Misha Kandaurov on 18.04.2025.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct OMDbResponse: Codable {
+struct IMDbResponse: Codable {
     let imdbRating: String
     let poster: String?
     let genre: String

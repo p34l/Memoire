@@ -24,8 +24,8 @@ struct AddItemView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        IMDBService.fetchIMDBData(for: title) { ratingString, posterURL, genre, type, plot in
-                            IMDBService.handleFetchedData(
+                        IMDbService.fetchIMDBData(for: title) { ratingString, posterURL, genre, type, plot in
+                            IMDbService.handleFetchedData(
                                 title: title,
                                 ratingString: ratingString,
                                 posterURL: posterURL,

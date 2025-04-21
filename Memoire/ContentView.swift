@@ -72,6 +72,13 @@ struct ContentView: View {
             Group {
                 if let posterURL = item.posterURL, let url = URL(string: posterURL) {
                     CachedAsyncImage(url: url, width: 60, height: 90)
+                } else {
+                    Image(systemName: "film")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 60, height: 90)
+                        .foregroundColor(.gray)
+                        .cornerRadius(8)
                 }
             }
         }

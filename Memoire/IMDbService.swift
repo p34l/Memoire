@@ -1,5 +1,5 @@
 //
-//  OMDBService.swift
+//  IMDbService.swift
 //  Memoire
 //
 //  Created by Misha Kandaurov on 20.04.2025.
@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import CoreData
 
-struct IMDBService {
+struct IMDbService {
     
     static func fetchIMDBData(for title: String, completion: @escaping (String?, String?, String?, String?, String?) -> Void) {
         let apiKey = "8b7dbf4"
@@ -24,7 +24,7 @@ struct IMDBService {
         URLSession.shared.dataTask(with: url) { data, _, _ in
             guard
                 let data = data,
-                let decoded = try? JSONDecoder().decode(OMDbResponse.self, from: data)
+                let decoded = try? JSONDecoder().decode(IMDbResponse.self, from: data)
             else {
                 completion(nil, nil, nil, nil, nil)
                 return
