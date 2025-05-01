@@ -28,8 +28,13 @@ struct AddItemView: View {
                     TextField("Enter movie title", text: $title)
                         .padding(.horizontal)
                         .frame(height: 45)
-                        .background(Color(.systemGray6))
+                        .background(Color(.systemGray6)) 
                         .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.blue, lineWidth: 1)
+                        )
+                        .foregroundColor(.primary)
                     
                     Button(action: {
                         searchMovies()

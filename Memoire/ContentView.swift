@@ -41,13 +41,20 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(filteredItems, id: \.id) { item in
-                    ItemRow(item: item)
-                        .padding(.vertical, 6)
-                }
-                .onDelete { indexSet in
-                    indexSet.map { dataManager.items[$0] }.forEach { item in
-                        dataManager.deleteItem(item)
+                if filteredItems.isEmpty {
+                    Text("No results to display")
+                        .foregroundColor(.gray)
+                        .italic()
+                        .padding()
+                } else {
+                    ForEach(filteredItems, id: \.id) { item in
+                        ItemRow(item: item)
+                            .padding(.vertical, 6)
+                    }
+                    .onDelete { indexSet in
+                        indexSet.map { dataManager.items[$0] }.forEach { item in
+                            dataManager.deleteItem(item)
+                        }
                     }
                 }
             }
@@ -55,12 +62,7 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: {
-                        if !filteredItems.isEmpty {
-                            showingFilter = true
-                        }
-                        else {
-                            showingAlert = true
-                        }
+                        showingFilter = true
                     }) {
                         Label("Filter", systemImage: "line.3.horizontal.decrease")
                     }
