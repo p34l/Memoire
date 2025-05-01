@@ -11,33 +11,70 @@ import CoreData
 
 struct IMDbService {
     
-    static func fetchIMDBData(for title: String, completion: @escaping (String?, String?, String?, String?, String?) -> Void) {
-        let apiKey = "8b7dbf4"
-        let formattedTitle = title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? title
-        let urlString = "https://www.omdbapi.com/?t=\(formattedTitle)&apikey=\(apiKey)"
+    static func fetchIMDBData(for title: String, completion: @escaping ([IMDbSearchItem]) -> Void) {
+        var urlComponents = URLComponents(string: "https://www.omdbapi.com/")
+        urlComponents?.queryItems = [
+            URLQueryItem(name: "s", value: title),
+            URLQueryItem(name: "apikey", value: "8b7dbf4")
+        ]
         
-        guard let url = URL(string: urlString) else {
-            completion(nil, nil, nil, nil, nil)
+        guard let url = urlComponents?.url else {
+            completion([])
             return
         }
         
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard
-                let data = data,
-                let decoded = try? JSONDecoder().decode(IMDbResponse.self, from: data)
-            else {
-                completion(nil, nil, nil, nil, nil)
+        URLSession.shared.dataTask(with: url) { data, _, error in
+            if let e = error {
+                print(e)
+                completion([])
                 return
             }
-            completion(
-                decoded.imdbRating,
-                decoded.poster,
-                decoded.genre,
-                decoded.type,
-                decoded.plot
-            )
+            
+            guard let data = data else {
+                completion([])
+                return
+            }
+            
+            do {
+                let decodedResponse = try JSONDecoder().decode(IMDbSearchResponse.self, from: data)
+                completion(decodedResponse.search)
+            } catch {
+                completion([])
+                print("Decoding failed \(error) with response string: \(String(describing: String(data: data, encoding: .utf8)))")
+            }
         }.resume()
     }
+    
+    static func fetchMovieDetails(imdbID: String, completion: @escaping (IMDbResponse?) -> Void) {
+        let apiKey = "8b7dbf4"
+        let urlString = "https://www.omdbapi.com/?i=\(imdbID)&apikey=\(apiKey)"
+        
+        guard let url = URL(string: urlString) else {
+            completion(nil)
+            return
+        }
+        
+        URLSession.shared.dataTask(with: url) { data, _, error in
+            if let error = error {
+                print(error)
+                completion(nil)
+                return
+            }
+            
+            guard let data = data else {
+                completion(nil)
+                return
+            }
+            
+            do {
+                let decodedResponse = try JSONDecoder().decode(IMDbResponse.self, from: data)
+                completion(decodedResponse)
+            } catch {
+                completion(nil)
+            }
+        }.resume()
+    }
+
     
     static func handleFetchedData(
         title: String,
@@ -52,7 +89,7 @@ struct IMDbService {
     ) {
         DispatchQueue.main.async {
             let ratingValue = String(format: "%.1f", Double(ratingString ?? "") ?? 0.0)
-            
+                        
             dataManager.addItem(
                 title: title,
                 rating: ratingValue,
@@ -61,7 +98,6 @@ struct IMDbService {
                 type: type,
                 plot: plot
             )
-            
             dismiss()
         }
     }

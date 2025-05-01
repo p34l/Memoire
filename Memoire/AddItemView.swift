@@ -12,34 +12,102 @@ struct AddItemView: View {
     @ObservedObject var dataManager: ListItemDataManager
     
     @State private var title: String = ""
+    @State private var searchResults: [IMDbSearchItem] = []
+    @State private var selectedMovie: IMDbSearchItem?
+    @State private var showClearButton: Bool = false
     
     var body: some View {
         NavigationStack {
-            Form {
-                Section(header: Text("Title")) {
-                    TextField("Enter name", text: $title)
+            VStack(spacing: 20) {
+                Text("Add New")
+                    .font(.largeTitle.bold())
+                    .padding(.top)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                
+                HStack {
+                    TextField("Enter movie title", text: $title)
+                        .padding(.horizontal)
+                        .frame(height: 45)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                    
+                    Button(action: {
+                        searchMovies()
+                    }) {
+                        Image(systemName: "magnifyingglass")
+                            .frame(width: 45, height: 45)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                            .shadow(radius: 2)
+                    }
                 }
-            }
-            .navigationTitle("Add New")  
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        IMDbService.fetchIMDBData(for: title) { ratingString, posterURL, genre, type, plot in
-                            IMDbService.handleFetchedData(
-                                title: title,
-                                ratingString: ratingString,
-                                posterURL: posterURL,
-                                genre: genre,
-                                type: type,
-                                plot: plot,
-                                dataManager: dataManager,
-                                dismiss: dismiss,
-                                viewContext: dataManager.container.viewContext
-                            )
+                .padding([.leading, .trailing], 8)
+                
+                
+                
+                if !searchResults.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("Search Results")
+                                .font(.headline)
+                                .padding(.horizontal)
+                            
+                            if showClearButton {
+                                Spacer()
+                                Button("Clear Search") {
+                                    clearSearch()
+                                }
+                                .padding(.trailing, 16)
+                            }
                         }
+                        
+                        List(searchResults, id: \.imdbID) { movie in
+                            Button(action: {
+                                selectedMovie = movie
+                                if let selectedMovie = selectedMovie {
+                                    IMDbService.fetchMovieDetails(imdbID: selectedMovie.imdbID) { movies in
+                                        if let movie = movies {
+                                            IMDbService.handleFetchedData(
+                                                title: movie.title,
+                                                ratingString: movie.imdbRating,
+                                                posterURL: movie.poster,
+                                                genre: movie.genre,
+                                                type: movie.type,
+                                                plot: movie.plot,
+                                                dataManager: dataManager,
+                                                dismiss: dismiss,
+                                                viewContext: dataManager.container.viewContext
+                                            )
+                                        }
+                                    }
+                                }
+                            }) {
+                                HStack {
+                                    if let poster = movie.poster, let url = URL(string: poster) {
+                                        AsyncImage(url: url) { image in
+                                            image.resizable()
+                                                .scaledToFill()
+                                                .frame(width: 50, height: 75)
+                                                .cornerRadius(8)
+                                        } placeholder: {
+                                            Color.gray.frame(width: 50, height: 75)
+                                                .cornerRadius(8)
+                                        }
+                                    }
+                                    Text(movie.title)
+                                        .padding(.leading, 8)
+                                }
+                            }
+                        }
+                        .listStyle(PlainListStyle())
                     }
                 }
                 
+                Spacer()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         dismiss()
@@ -47,5 +115,22 @@ struct AddItemView: View {
                 }
             }
         }
+    }
+    
+    private func searchMovies() {
+        IMDbService.fetchIMDBData(for: title) { movies in
+            if !movies.isEmpty {
+                searchResults = movies
+                showClearButton = true
+            } else {
+                searchResults = []
+            }
+        }
+    }
+    
+    private func clearSearch() {
+        title = ""
+        searchResults = []
+        showClearButton = false
     }
 }

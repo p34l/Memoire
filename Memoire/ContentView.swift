@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var selectedGenres: Set<String> = []
     @State private var minRating: Double = 0
     @State private var showingFilter = false
+    @State private var showingAlert = false
     
     var filteredItems: [ListItem] {
         let listItems = dataManager.items.map { ListItem(from: $0) }
@@ -54,7 +55,12 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: {
-                        showingFilter = true
+                        if !filteredItems.isEmpty {
+                            showingFilter = true
+                        }
+                        else {
+                            showingAlert = true
+                        }
                     }) {
                         Label("Filter", systemImage: "line.3.horizontal.decrease")
                     }
@@ -74,11 +80,16 @@ struct ContentView: View {
                     }
                 }
             }
+            .alert("There are no items to filter", isPresented: $showingAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Add some items first!")
+            }
             .sheet(isPresented: $showingFilter) {
                 FilterView(
                     selectedType: $selectedType,
                     selectedGenres: $selectedGenres,
-                    minRating: $minRating, 
+                    minRating: $minRating,
                     allItems: dataManager.items.map { ListItem(from: $0) }
                 )
             }
