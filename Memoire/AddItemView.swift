@@ -15,6 +15,7 @@ struct AddItemView: View {
     @State private var searchResults: [IMDbSearchItem] = []
     @State private var selectedMovie: IMDbSearchItem?
     @State private var showClearButton: Bool = false
+    @State private var searchDebounceTimer: Timer? = nil
     
     var body: some View {
         NavigationStack {
@@ -35,17 +36,13 @@ struct AddItemView: View {
                                 .stroke(Color.blue, lineWidth: 1)
                         )
                         .foregroundColor(.primary)
-                    
-                    Button(action: {
-                        searchMovies()
-                    }) {
-                        Image(systemName: "magnifyingglass")
-                            .frame(width: 45, height: 45)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                            .shadow(radius: 2)
-                    }
+                        .onChange(of: title) { newValue in
+                            searchDebounceTimer?.invalidate()
+                            
+                            searchDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
+                                searchMovies()
+                            }
+                        }
                 }
                 .padding([.leading, .trailing], 8)
                 
@@ -138,4 +135,6 @@ struct AddItemView: View {
         searchResults = []
         showClearButton = false
     }
+    
+    
 }
